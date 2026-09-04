@@ -10,3 +10,7 @@ ENV/
 .idea/
 .vscode/
 *.log
+
+# Video generation assets
+build_demo_assets/
+*.mp4
