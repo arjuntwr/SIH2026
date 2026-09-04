@@ -17,7 +17,63 @@ def evaluate_regulatory_framework(hierarchy: Dict[str, str], official_name: str,
     district = hierarchy.get("district", "").lower()
     taluka = hierarchy.get("taluka", "").lower()
     village = hierarchy.get("village_ward", "").lower()
+    state = hierarchy.get("state", "Gujarat").lower()
     name_full = official_name.lower()
+
+    # 0. National Multi-State Jurisdiction Support (UP & Maharashtra Demo)
+    if "uttar pradesh" in state or "gautam buddha" in district or "noida" in name_full:
+        authority = "New Okhla Industrial Development Authority (NOIDA) / YEIDA"
+        authority_short = "NOIDA / YEIDA"
+        special_act = "UP Industrial Area Development Act, 1976 & UP Revenue Code, 2006"
+        jantri_tier = "Circle Rate Tier 1: Premium NCR Commercial & Industrial Hub (Sectoral Master Plan)"
+        na_prereqs = [
+            "Section 80 Declaration under UP Revenue Code 2006 (Agricultural to Non-Agricultural status).",
+            "NOIDA Master Plan 2041 zoning conformance and building layout sanction.",
+            "State Environmental Impact Assessment Authority (SEIAA UP) clearance for built-up > 20,000 sqm.",
+            "NOC from Uttar Pradesh Ground Water Department and Forest Department buffer compliance.",
+            "16-digit ULPIN (Bhu-Aadhaar) digital parcel validation via UP Bhulekh portal."
+        ]
+        tenancy_rules = [
+            "UP Zamindari Abolition and Land Reforms (UPZALR) Act 1950 & UP Revenue Code 2006 ceiling compliance (12.5 acres).",
+            "Section 98/99 UP Revenue Code: Strict restrictions on alienation of SC/ST land without prior sanction of Collector.",
+            "RERA Uttar Pradesh registration mandatory for residential/commercial plotted layout developments.",
+            "Hindon/Yamuna riverbed zonation restrictions (no permanent construction within 100m high-flood level)."
+        ]
+        return {
+            "applicable_authority": authority,
+            "authority_short": authority_short,
+            "special_legislation": special_act,
+            "jantri_tier": jantri_tier,
+            "na_prerequisites": na_prereqs,
+            "tenancy_and_conversion_rules": tenancy_rules
+        }
+
+    if "maharashtra" in state or "pune" in district or "pune" in name_full:
+        authority = "Pune Metropolitan Region Development Authority (PMRDA) / PMC"
+        authority_short = "PMRDA / PMC"
+        special_act = "Maharashtra Regional and Town Planning (MRTP) Act 1966 & Maharashtra Land Revenue Code (MLRC) 1966"
+        jantri_tier = "Ready Reckoner Tier 1: Pune Metropolitan Corridor (Annual Statement of Rates 2026)"
+        na_prereqs = [
+            "Section 44 Maharashtra Land Revenue Code (MLRC) 1966 non-agricultural permission via e-Hakk portal.",
+            "PMRDA Development Plan 2041 zoning verification and layout sanction.",
+            "Maharashtra Pollution Control Board (MPCB) consent to establish for commercial/industrial setups.",
+            "Water Resources Department (WRD) NOC for projects adjacent to Mula-Mutha river basin.",
+            "Verification of Title / Search Report for 30 years from Sub-Registrar Office."
+        ]
+        tenancy_rules = [
+            "Section 63 Bombay Tenancy and Agricultural Lands Act 1948 (Strict bar on transfer of agricultural land to non-agriculturists).",
+            "Section 36 & 36A MLRC: Absolute prohibition on non-tribal transfer of tribal lands without State Govt sanction.",
+            "Section 85 MLRC partition compliance and Satbara (7/12 & 8A) digital record synchronization.",
+            "Western Ghats Eco-Sensitive Area (ESA) foothills construction buffer compliance."
+        ]
+        return {
+            "applicable_authority": authority,
+            "authority_short": authority_short,
+            "special_legislation": special_act,
+            "jantri_tier": jantri_tier,
+            "na_prerequisites": na_prereqs,
+            "tenancy_and_conversion_rules": tenancy_rules
+        }
 
     # 1. Dynamically Detect Governing Planning Authority
     authority = "Gram Panchayat / Revenue Department (District Collectorate)"

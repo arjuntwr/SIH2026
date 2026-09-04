@@ -937,10 +937,34 @@ def render_knowledge_base_html() -> str:
     <!-- Live Multi-Page Routing Links -->
     <nav class="global-nav">
       <a href="/" class="nav-tab">🗺️ Spatial GIS Map</a>
-      <a href="/knowledge-base" class="nav-tab active">📚 Knowledge Repository</a>
+      <a href="/knowledge-base" class="nav-tab active">📚 Policy Repository</a>
+      <a href="/innovation" class="nav-tab">💡 Innovation & Challenges</a>
     </nav>
 
-    <div class="header-right">
+    <!-- Header Controls: Persona & State Switchers (Req 17 & 10) -->
+    <div class="header-controls" style="display:flex; align-items:center; gap:10px;">
+      <div class="selector-box" style="display:flex; align-items:center; gap:6px; background:rgba(19, 29, 49, 0.9); border:1px solid var(--border-strong); padding:4px 10px; border-radius:8px; font-size:0.78rem;">
+        <span style="color:var(--text-dim); font-size:0.72rem; font-weight:600; text-transform:uppercase;">Role:</span>
+        <select id="personaSelector" onchange="onKbPersonaChange(this.value)" style="background:transparent; border:none; color:var(--accent); font-family:'Inter', sans-serif; font-size:0.80rem; font-weight:600; cursor:pointer; outline:none;">
+          <option value="citizen" style="background:var(--bg-surface); color:var(--text-main);">👤 Public Citizen</option>
+          <option value="researcher" style="background:var(--bg-surface); color:var(--text-main);">🔬 Academic Researcher</option>
+          <option value="official" style="background:var(--bg-surface); color:var(--text-main);">🏛️ DoLR Policy Official</option>
+        </select>
+      </div>
+
+      <div class="selector-box" style="display:flex; align-items:center; gap:6px; background:rgba(19, 29, 49, 0.9); border:1px solid var(--border-strong); padding:4px 10px; border-radius:8px; font-size:0.78rem;">
+        <span style="color:var(--text-dim); font-size:0.72rem; font-weight:600; text-transform:uppercase;">State:</span>
+        <select id="stateSelector" onchange="onKbStateChange(this.value)" style="background:transparent; border:none; color:var(--gold); font-family:'Inter', sans-serif; font-size:0.80rem; font-weight:600; cursor:pointer; outline:none;">
+          <option value="gujarat" style="background:var(--bg-surface); color:var(--text-main);">Gujarat (Active Pilot)</option>
+          <option value="up" style="background:var(--bg-surface); color:var(--text-main);">Uttar Pradesh (Demo)</option>
+          <option value="maharashtra" style="background:var(--bg-surface); color:var(--text-main);">Maharashtra (Demo)</option>
+        </select>
+      </div>
+
+      <button id="btnSubmitResearch" onclick="openResearchModal()" style="display:none; background:linear-gradient(135deg, #10B981, #059669); color:#FFF; border:none; padding:6px 14px; border-radius:8px; font-weight:700; font-size:0.78rem; cursor:pointer; box-shadow:0 0 12px rgba(16,185,129,0.3);">
+        + Submit Research / Dataset
+      </button>
+
       <div class="pulse-indicator">
         <span class="pulse-dot"></span>
         <span id="liveGovStatusText">Gov Feeds Active</span>
@@ -1556,6 +1580,59 @@ def render_knowledge_base_html() -> str:
       document.getElementById('synthesisDrawerOverlay').style.display = 'none';
     }
 
+    // ------------------------------------------------------------------------
+    // Persona & State Synchronization (Req 17 & 10)
+    // ------------------------------------------------------------------------
+    document.addEventListener("DOMContentLoaded", () => {
+      const savedPersona = localStorage.getItem("bhumi_persona") || "citizen";
+      const savedState = localStorage.getItem("bhumi_state") || "gujarat";
+      
+      const pSel = document.getElementById("personaSelector");
+      const sSel = document.getElementById("stateSelector");
+      if (pSel) pSel.value = savedPersona;
+      if (sSel) sSel.value = savedState;
+
+      applyKbPersona(savedPersona);
+    });
+
+    function onKbPersonaChange(val) {
+      localStorage.setItem("bhumi_persona", val);
+      applyKbPersona(val);
+    }
+
+    function applyKbPersona(val) {
+      const btn = document.getElementById("btnSubmitResearch");
+      if (btn) {
+        btn.style.display = (val === 'researcher') ? 'inline-block' : 'none';
+      }
+    }
+
+    function onKbStateChange(val) {
+      localStorage.setItem("bhumi_state", val);
+      if (val === 'up') {
+        applyQuickQuery('Uttar Pradesh Revenue Code 2006 Section 80');
+      } else if (val === 'maharashtra') {
+        applyQuickQuery('Maharashtra Land Revenue Code 1966 Section 63 Tenancy');
+      } else {
+        applyQuickQuery('Gujarat Land Revenue Code 1879 Section 65');
+      }
+    }
+
+    function openResearchModal() {
+      document.getElementById("researchModal").style.display = "flex";
+    }
+
+    function closeResearchModal() {
+      document.getElementById("researchModal").style.display = "none";
+    }
+
+    function handleResearchSubmit(e) {
+      e.preventDefault();
+      closeResearchModal();
+      const docId = "DoLR-RES-2026-" + Math.floor(1000 + Math.random() * 9000);
+      alert(`Academic Research Paper Submitted! Registered under DoLR Review Docket ID: ${docId}`);
+    }
+
     // Helper HTML Escaper
     function escapeHtml(str) {
       if (!str) return '';
@@ -1567,6 +1644,70 @@ def render_knowledge_base_html() -> str:
         .replace(/'/g, '&#039;');
     }
   </script>
+
+  <!-- Academic Research / Dataset Submission Modal (Req 17) -->
+  <div id="researchModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); z-index:2500; align-items:center; justify-content:center; padding:20px;">
+    <div style="background:var(--bg-surface); border:1px solid var(--border-strong); border-radius:16px; width:100%; max-width:620px; max-height:90vh; overflow-y:auto; padding:28px; position:relative; box-shadow:0 20px 50px rgba(0,0,0,0.6);">
+      <button onclick="closeResearchModal()" style="position:absolute; top:20px; right:20px; background:transparent; border:none; color:var(--text-dim); font-size:1.2rem; cursor:pointer;">✕</button>
+      <h3 style="font-size:1.25rem; font-weight:700; color:#FFF; margin-bottom:4px;">Academic Research & Dataset Submission Portal</h3>
+      <p style="font-size:0.80rem; color:var(--text-dim); margin-bottom:20px;">Unlocked for Academic Researcher Persona • DoLR Land Governance Peer Review Pipeline</p>
+
+      <form onsubmit="handleResearchSubmit(event)">
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--text-main); margin-bottom:5px;">Paper / Dataset Title *</label>
+          <input type="text" style="width:100%; background:var(--bg-base); border:1px solid var(--border-strong); border-radius:8px; padding:10px 12px; color:#FFF; font-size:0.85rem;" placeholder="e.g. Empirical Study on Section 84C Tenancy Disputes in Gujarat" required />
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+          <div>
+            <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--text-main); margin-bottom:5px;">Lead Author / PI *</label>
+            <input type="text" style="width:100%; background:var(--bg-base); border:1px solid var(--border-strong); border-radius:8px; padding:10px 12px; color:#FFF; font-size:0.85rem;" placeholder="Dr. / Prof. Name" required />
+          </div>
+          <div>
+            <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--text-main); margin-bottom:5px;">University / Institution *</label>
+            <input type="text" style="width:100%; background:var(--bg-base); border:1px solid var(--border-strong); border-radius:8px; padding:10px 12px; color:#FFF; font-size:0.85rem;" placeholder="e.g. GNLU / IIT Bombay / IIM Ahmedabad" required />
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+          <div>
+            <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--text-main); margin-bottom:5px;">Jurisdiction Scope *</label>
+            <select style="width:100%; background:var(--bg-base); border:1px solid var(--border-strong); border-radius:8px; padding:10px 12px; color:#FFF; font-size:0.85rem;">
+              <option>State of Gujarat</option>
+              <option>State of Uttar Pradesh</option>
+              <option>State of Maharashtra</option>
+              <option>Pan-India National Scope</option>
+            </select>
+          </div>
+          <div>
+            <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--text-main); margin-bottom:5px;">Research Category *</label>
+            <select style="width:100%; background:var(--bg-base); border:1px solid var(--border-strong); border-radius:8px; padding:10px 12px; color:#FFF; font-size:0.85rem;">
+              <option>Cadastral AI & Spatial Analysis</option>
+              <option>Tenancy Law & Agricultural Reform</option>
+              <option>Revenue Litigation & Dispute Economics</option>
+              <option>Jantri Valuation & Land Value Capture</option>
+              <option>Environmental & Forest Land Governance</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--text-main); margin-bottom:5px;">Abstract & Key Policy Findings *</label>
+          <textarea rows="4" style="width:100%; background:var(--bg-base); border:1px solid var(--border-strong); border-radius:8px; padding:10px 12px; color:#FFF; font-size:0.85rem;" placeholder="Summarize key statutory insights, datasets utilized, empirical findings, and recommended legal amendments..." required></textarea>
+        </div>
+
+        <div style="margin-bottom:18px;">
+          <label style="display:block; font-size:0.78rem; font-weight:600; color:var(--text-main); margin-bottom:5px;">Open Dataset / Preprint Repository URL *</label>
+          <input type="url" style="width:100%; background:var(--bg-base); border:1px solid var(--border-strong); border-radius:8px; padding:10px 12px; color:#FFF; font-size:0.85rem;" placeholder="https://zenodo.org/record/... or GitHub repository URL" required />
+        </div>
+
+        <button type="submit" style="width:100%; background:linear-gradient(135deg, #10B981, #059669); color:#FFF; border:none; padding:12px; border-radius:8px; font-weight:700; font-size:0.90rem; cursor:pointer;">
+          Submit for DoLR Peer Review
+        </button>
+      </form>
+    </div>
+  </div>
+
 </body>
 </html>
 """
