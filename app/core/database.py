@@ -229,10 +229,127 @@ def init_db():
     )
     """)
     
+    # =========================================================================
+    # 9. Repository v2 — Canonical Policy & Research Document Store
+    # Separate repo_ prefixed tables to avoid collision with legacy documents table.
+    # =========================================================================
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS repo_documents (
+        id TEXT PRIMARY KEY,
+        doc_id TEXT UNIQUE NOT NULL,
+        title TEXT NOT NULL,
+        short_title TEXT,
+        document_number TEXT,
+        document_type TEXT NOT NULL,
+        description TEXT,
+        issuing_authority TEXT NOT NULL,
+        jurisdiction TEXT NOT NULL,
+        state_code TEXT,
+        district TEXT,
+        publication_date TEXT,
+        enactment_date TEXT,
+        effective_date TEXT,
+        status TEXT NOT NULL DEFAULT 'active',
+        language TEXT NOT NULL DEFAULT 'en',
+        source_url TEXT,
+        source_name TEXT,
+        source_type TEXT,
+        provenance_tier TEXT NOT NULL,
+        checksum_sha256 TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS repo_document_chunks (
+        id TEXT PRIMARY KEY,
+        document_id TEXT NOT NULL,
+        chunk_index INTEGER NOT NULL,
+        section_number TEXT,
+        section_title TEXT,
+        heading TEXT,
+        page_number INTEGER,
+        content_text TEXT NOT NULL,
+        normalized_text TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (document_id) REFERENCES repo_documents (id)
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS provenance_records (
+        id TEXT PRIMARY KEY,
+        document_id TEXT NOT NULL UNIQUE,
+        source_organization TEXT NOT NULL,
+        original_url TEXT,
+        retrieval_timestamp TEXT NOT NULL,
+        verification_status TEXT NOT NULL DEFAULT 'Verified',
+        checksum_sha256 TEXT,
+        provenance_tier TEXT NOT NULL,
+        source_notes TEXT,
+        FOREIGN KEY (document_id) REFERENCES repo_documents (id)
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS topics (
+        id TEXT PRIMARY KEY,
+        name TEXT UNIQUE NOT NULL,
+        description TEXT
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS document_topics (
+        document_id TEXT NOT NULL,
+        topic_id TEXT NOT NULL,
+        PRIMARY KEY (document_id, topic_id),
+        FOREIGN KEY (document_id) REFERENCES repo_documents (id),
+        FOREIGN KEY (topic_id) REFERENCES topics (id)
+    )
+    """)
+
+    # FTS5 virtual table for BM25 full-text search over chunks.
+    # Uses content-table pattern pointing to repo_document_chunks.
+    # Note: content table pattern requires manual population via INSERT.
+    cursor.execute("""
+    CREATE VIRTUAL TABLE IF NOT EXISTS repo_chunks_fts USING fts5(
+        title,
+        section_number,
+        section_title,
+        content_text,
+        jurisdiction,
+        document_type,
+        issuing_authority,
+        content='repo_document_chunks',
+        content_rowid='rowid'
+    )
+    """)
+
     conn.commit()
     conn.close()
-    
+
     _seed_baseline_dispute_data()
+    _seed_canonical_repository()
+
+
+def _seed_canonical_repository():
+    """Idempotent seed of the verified canonical land governance corpus into repo_ tables."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) as count FROM repo_documents")
+    if cursor.fetchone()["count"] > 0:
+        conn.close()
+        return
+    conn.close()
+
+    try:
+        from app.repository.seed_data import run_seed
+        run_seed()
+        print("[Repository] Canonical corpus seeded successfully.")
+    except Exception as e:
+        print(f"[Repository] Seed failed (non-fatal): {e}")
 
 def _seed_baseline_dispute_data():
     """Seed baseline dispute telemetry into SQLite database with source provenance."""
